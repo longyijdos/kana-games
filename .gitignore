@@ -1,4 +1,5 @@
 node_modules/
+dist/
 src/.agent-token
 src/.agent-cursor
 *.tgz

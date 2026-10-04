@@ -1,8 +1,43 @@
-const roleName = role => role === 'player' ? '玩家' : 'Agent';
+import type { ActionArgs, AvailableAction, GameEvent, GameResult, GameState, Role, RoleView } from '../protocol.js';
+import type { EngineOptions, GameDefinition, GameEngine } from './types.js';
+
+export interface Bid {
+  count: number;
+  point: number;
+  bidder: Role;
+}
+
+export interface DiceData {
+  myDice: number[];
+  opponentDiceCount: number;
+  opponentDice?: number[];
+  currentBid: Bid | null;
+  onesAreWild: boolean;
+}
+
+export interface DiceDetails {
+  opener: Role;
+  bidder: Role;
+  targetPoint: number;
+  bidCount: number;
+  actualCount: number;
+  onesAreWild: boolean;
+  allDice: Record<Role, number[]>;
+}
+
+const roleName = (role: Role) => role === 'player' ? '玩家' : 'Agent';
 const diceIcons = ['', '⚀', '⚁', '⚂', '⚃', '⚄', '⚅'];
 
-class Engine {
-  constructor({ starter }) {
+export class Engine implements GameEngine<DiceData, DiceDetails> {
+  dice: Record<Role, number[]>;
+  status: 'playing' | 'ended';
+  phase: string;
+  currentTurn: Role | null;
+  currentBid: Bid | null;
+  onesAreWild: boolean;
+  result: GameResult<DiceDetails> | null;
+
+  constructor({ starter }: EngineOptions) {
     const roll = () => Array.from({ length: 5 }, () => Math.floor(Math.random() * 6) + 1)
       .sort((a, b) => a - b);
     this.dice = { player: roll(), agent: roll() };
@@ -14,20 +49,21 @@ class Engine {
     this.result = null;
   }
 
-  isMyTurn(role) {
+  isMyTurn(role: Role) {
     return this.status === 'playing' && this.currentTurn === role;
   }
 
-  minimumCount(point) {
+  minimumCount(point: number) {
     return this.currentBid ? this.currentBid.count + (point <= this.currentBid.point ? 1 : 0) : 2;
   }
 
-  executeAction(role, move, args) {
+  executeAction(role: Role, move: string, args: ActionArgs): GameEvent {
     if (this.status !== 'playing') throw new Error('当前对局已结束');
     if (!this.isMyTurn(role)) throw new Error(`当前不是 ${role} 的行动回合`);
     if (move === 'call') {
       const { count, point } = args;
-      if (!Number.isInteger(count) || !Number.isInteger(point) ||
+      if (typeof count !== 'number' || typeof point !== 'number' ||
+          !Number.isInteger(count) || !Number.isInteger(point) ||
           count < 2 || count > 10 || point < 1 || point > 6 || count < this.minimumCount(point)) {
         throw new Error('叫点不合法：2 至 10 个、点数 1 至 6；数量需更多，或数量相同点数更大');
       }
@@ -61,12 +97,12 @@ class Engine {
     };
   }
 
-  availableActions(role) {
+  availableActions(role: Role): AvailableAction[] {
     if (!this.isMyTurn(role)) return [];
     const minimumCountByPoint = Object.fromEntries([1, 2, 3, 4, 5, 6]
       .filter(point => this.minimumCount(point) <= 10)
       .map(point => [point, this.minimumCount(point)]));
-    const actions = [];
+    const actions: AvailableAction[] = [];
     if (Object.keys(minimumCountByPoint).length) {
       actions.push({
         name: 'call', description: '叫点，数量至少满足对应点数的最低数量',
@@ -81,7 +117,7 @@ class Engine {
     return actions;
   }
 
-  getStateForRole(role) {
+  getStateForRole(role: Role): RoleView<DiceData, DiceDetails> {
     const opponent = role === 'player' ? 'agent' : 'player';
     return {
       status: this.status, phase: this.phase, currentTurn: this.currentTurn,
@@ -96,13 +132,16 @@ class Engine {
   }
 }
 
-function formatState({ data, status }) {
+export function formatState(state: GameState<DiceData, DiceDetails>) {
+  const { status } = state;
+  const data = state.data!;
   const lines = [`你的骰子: ${data.myDice.map(point => `${diceIcons[point]} (${point})`).join(' ')}`];
-  if (status === 'ended') lines.push(`对手骰子: ${data.opponentDice.map(point => `${diceIcons[point]} (${point})`).join(' ')}`);
+  if (status === 'ended') lines.push(`对手骰子: ${data.opponentDice!.map(point => `${diceIcons[point]} (${point})`).join(' ')}`);
   lines.push(`万能1点: ${data.onesAreWild ? '有效' : '已失效'}`);
   const bid = data.currentBid;
   lines.push(bid ? `当前叫点: ${bid.count} 个 ${bid.point}（${roleName(bid.bidder)}叫出）` : '当前无人叫点。');
   return lines.join('\n');
 }
 
-module.exports = { id: 'liars-dice', name: '大话骰', Engine, formatState };
+const game: GameDefinition<DiceData, DiceDetails> = { id: 'liars-dice', name: '大话骰', Engine, formatState };
+export default game;

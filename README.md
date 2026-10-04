@@ -4,14 +4,18 @@
 Agent 通过固定入口 `kana-games` 观察、行动、聊天和等待。
 每款游戏使用独立页面和样式，启动服务时选定游戏。
 
-当前集成大话骰与五子棋。CLI、游戏服务、网页与 skill 文档在本仓库一起维护。
+当前集成大话骰与五子棋。CLI、游戏服务和网页脚本统一使用 TypeScript，
+启用严格类型检查；页面仍使用原生 HTML、CSS 和 DOM。skill 文档也在本仓库维护。
 
 ## 安装与启动
 
 需要 Node.js 22 或更新版本。目前从本地仓库安装：
 
 ```sh
-npm install --global /absolute/path/to/kana-games
+cd /absolute/path/to/kana-games
+npm ci
+npm run build
+npm install --global .
 kana-games --version
 kana-games serve gomoku
 ```
@@ -43,13 +47,29 @@ kana-games serve gomoku --port 3457
 kana-games status --port 3457
 ```
 
-Agent Token 与事件游标写在安装目录的 `src/.agent-token` 与 `src/.agent-cursor`，
+Agent Token 与事件游标写在安装目录的 `dist/src/.agent-token` 与 `dist/src/.agent-cursor`，
 沿用本地客户端的文件认证方式；重启服务会更换 Token。
 一次运行一个服务实例。安装目录须可由运行 CLI 的用户写入。
 也可用 `AGENT_TOKEN` 提供连接已有服务所需的 Token。
 
-开发时可直接使用 `node src/cli.js` 代替 `kana-games`。包名为
-`@longyijdos/games`，发布到 npm 后可按包名安装。
+包名为 `@longyijdos/games`，发布到 npm 后可按包名安装。发布包包含编译后的
+JavaScript、网页静态资源和 skill 文档，使用者无需安装 TypeScript。
+
+## 开发与构建
+
+```sh
+npm ci
+npm run typecheck
+npm start -- gomoku
+```
+
+`npm start -- <game>` 会先构建再启动。`npm run typecheck` 只检查类型，不生成文件。
+`npm run build` 使用 `tsc` 编译 `src/`、`web/` 与构建脚本，并复制网页静态资源到
+`dist/`；不使用打包器。构建后可用 `node dist/src/cli.js` 执行其它 CLI 命令。
+
+前后端统一 ESM，导入路径写编译后的 `.js` 后缀；浏览器从 `dist/web/` 加载模块。
+共享协议类型放在 `src/protocol.ts`，网页用 `import type` 引用，不会引入服务端代码。
+`npm pack` 和 `npm publish` 通过 `prepack` 自动构建，`dist/` 不提交到 Git。
 
 ## 通用命令
 
@@ -102,15 +122,17 @@ CLI 保存最近读取的事件序号，下次动作或 `wait` 增量读取。
 
 ## 新增游戏
 
-1. 在 `src/games/<id>.js` 导出 `id`、`name`、`Engine`、`formatState`，并在
-   `src/games/index.js` 注册。
-2. 在 `web/<id>/` 编写自己的 `index.html`、样式与界面脚本。不同游戏的
-   布局和风格独立，启动该游戏时打开 `/<id>/`。复用 `web/shared/client.js`
+1. 在 `src/games/<id>.ts` 默认导出包含 `id`、`name`、`Engine`、`formatState` 的
+   游戏定义，实现 `src/games/types.ts` 中的 `GameDefinition`，并在
+   `src/games/index.ts` 注册。各游戏自行定义状态类型。
+2. 在 `web/<id>/` 编写自己的 `index.html`、样式与 TypeScript 界面脚本。不同游戏的
+   布局和风格独立，启动该游戏时打开 `/<id>/`。复用 `web/shared/client.ts`
    进行认证、动作提交和事件同步；它不包含页面布局或样式。
 3. 在 `skills/turn-based-games/references/<id>.md` 写规则、动作与示例，
    在 `SKILL.md` 中增加索引。游戏需要的依赖在 `package.json` 中声明。
 
-规则模块约定：
+规则引擎实现 `src/games/types.ts` 中的 `GameEngine`，通用状态、事件和动作类型
+见 `src/protocol.ts`。规则模块约定：
 
 - `new Engine({ starter })` 创建已开局的状态；`status` 为 `playing` 或 `ended`。
 - `isMyTurn(role)` 判断该角色是否需要行动，等待机制使用它。
@@ -128,7 +150,7 @@ CLI 保存最近读取的事件序号，下次动作或 `wait` 增量读取。
 连接提示和错误。动作请求为 `{ action: 'new', starter }`、
 `{ action: 'act', move, args, message }` 或 `{ action: 'talk', message }`。
 
-大话骰保留原页面布局，在 `app.js` 中适配公共状态；五子棋用 `board.js`
+大话骰保留原页面布局，在 `app.ts` 中适配公共状态；五子棋用 `board.ts`
 渲染棋盘。新游戏可以自行组织 HTML、CSS 和脚本，无需复用现有布局。
 
 ## Skill 文档

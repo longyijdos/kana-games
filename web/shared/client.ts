@@ -1,15 +1,21 @@
+import type { ActionPayload, ApiResponse, Snapshot } from '../../src/protocol.js';
+
 // Each page owns its UI. This client only authenticates, sends actions and syncs events.
-export function connect({ onSnapshot, onConnection, onError }) {
+export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConnection, onError }: {
+  onSnapshot(snapshot: Snapshot<Data, Details>, reset: boolean): void;
+  onConnection(connected: boolean): void;
+  onError(error: Error): void;
+}) {
   let playerToken = '';
   let seq = 0;
   let connected = false;
 
-  function setConnected(value) {
+  function setConnected(value: boolean) {
     connected = value;
     onConnection(value);
   }
 
-  function applySnapshot(snapshot, reset = false) {
+  function applySnapshot(snapshot: Snapshot<Data, Details>, reset = false) {
     if (reset) seq = 0;
     if (snapshot.seq < seq) return;
     const events = snapshot.events.filter(event => event.seq > seq);
@@ -20,9 +26,9 @@ export function connect({ onSnapshot, onConnection, onError }) {
   async function synchronize() {
     const authResponse = await fetch('/api/v1/player/auth', { method: 'POST' });
     if (!authResponse.ok) throw new Error('连接失败');
-    playerToken = (await authResponse.json()).playerToken;
+    playerToken = ((await authResponse.json()) as { playerToken: string }).playerToken;
     const response = await fetch('/api/v1/state', { headers: { Authorization: 'Bearer ' + playerToken } });
-    const snapshot = await response.json();
+    const snapshot = await response.json() as ApiResponse<Data, Details>;
     if (!response.ok || !snapshot.success) throw new Error(snapshot.error || '读取状态失败');
     applySnapshot(snapshot, true);
     setConnected(true);
@@ -36,24 +42,24 @@ export function connect({ onSnapshot, onConnection, onError }) {
           method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + playerToken },
           body: JSON.stringify({ after: seq, timeoutMs: 30000, waitFor: 'event' })
         });
-        const snapshot = await response.json();
+        const snapshot = await response.json() as ApiResponse<Data, Details>;
         if (!response.ok || !snapshot.success) throw new Error(snapshot.error || '订阅失败');
         applySnapshot(snapshot);
       } catch (err) {
         setConnected(false);
-        onError(err);
+        onError(err as Error);
         await new Promise(resolve => setTimeout(resolve, 1000));
       }
     }
   }
 
-  async function send(payload) {
+  async function send(payload: ActionPayload) {
     if (!connected) throw new Error('当前尚未连接');
     const response = await fetch('/api/v1/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + playerToken },
       body: JSON.stringify({ ...payload, after: seq, wait: 'none' })
     });
-    const snapshot = await response.json();
+    const snapshot = await response.json() as ApiResponse<Data, Details>;
     if (snapshot.state) applySnapshot(snapshot);
     if (!response.ok || !snapshot.success) {
       if (response.status === 403) setConnected(false);

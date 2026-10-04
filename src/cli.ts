@@ -1,16 +1,22 @@
 #!/usr/bin/env node
-const http = require('node:http');
-const fs = require('node:fs');
-const path = require('node:path');
-const games = require('./games');
-const { startServer, TOKEN_FILE } = require('./server');
-const { version } = require('../package.json');
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import games from './games/index.js';
+import { startServer, TOKEN_FILE } from './server.js';
+import type { ApiResponse, Snapshot } from './protocol.js';
 
-const CURSOR_FILE = path.join(__dirname, '.agent-cursor');
+const { version } = JSON.parse(fs.readFileSync(new URL('../../package.json', import.meta.url), 'utf8')) as { version: string };
+
+type Flag = 'json' | 'no-wait' | 'help';
+type ValueOption = 'message' | 'starter' | 'after' | 'args' | 'port';
+type Options = { json: boolean } & Partial<Record<Flag, boolean> & Record<ValueOption, string>>;
+
+const CURSOR_FILE = path.join(import.meta.dirname, '.agent-cursor');
 const argv = process.argv.slice(2);
 const command = argv.shift() || 'status';
-const options = { json: argv.includes('--json') };
-const words = [];
+const options: Options = { json: argv.includes('--json') };
+const words: string[] = [];
 
 function usage() {
   console.log(`kana-games ${version} — 一个用户与一个 Agent 的回合制游戏\n
@@ -29,19 +35,19 @@ function usage() {
 游戏: ${Object.keys(games).join('、')}`);
 }
 
-function fail(err) {
+function fail(err: Error) {
   console.error(options.json ? JSON.stringify({ success: false, error: err.message }) : err.message);
   process.exitCode = 1;
 }
 
-function readCursor(agentToken, port) {
+function readCursor(agentToken: string, port: number): number {
   if (options.after !== undefined) return Number(options.after);
   if (!fs.existsSync(CURSOR_FILE)) return 0;
-  const cursor = JSON.parse(fs.readFileSync(CURSOR_FILE, 'utf8'));
+  const cursor = JSON.parse(fs.readFileSync(CURSOR_FILE, 'utf8')) as { token: string; port: number; seq: number };
   return cursor.token === agentToken && cursor.port === port ? cursor.seq : 0;
 }
 
-function renderResponse(response) {
+function renderResponse(response: Snapshot) {
   if (options.json) {
     console.log(JSON.stringify(response, null, 2));
     return;
@@ -62,7 +68,7 @@ function renderResponse(response) {
     console.log(`【阶段】${state.phase}`);
     console.log(games[state.gameId].formatState(state));
     if (state.status === 'ended') {
-      console.log(`【结算】${state.result.reason}\n可使用 new 开下一局。`);
+      console.log(`【结算】${state.result!.reason}\n可使用 new 开下一局。`);
     } else {
       console.log(state.isMyTurn ? '👉 轮到你行动。' : '⏳ 等待用户行动。');
       for (const action of state.availableActions) console.log(`【可用动作】${JSON.stringify(action)}`);
@@ -70,8 +76,8 @@ function renderResponse(response) {
   }
 }
 
-function requestApi(method, endpoint, payload, agentToken, port) {
-  return new Promise((resolve, reject) => {
+function requestApi(method: string, endpoint: string, payload: Record<string, unknown> | undefined, agentToken: string, port: number) {
+  return new Promise<{ status: number; response: ApiResponse }>((resolve, reject) => {
     const body = payload === undefined ? null : JSON.stringify(payload);
     const req = http.request({
       hostname: '127.0.0.1', port, path: endpoint, method,
@@ -83,8 +89,8 @@ function requestApi(method, endpoint, payload, agentToken, port) {
       let responseBody = '';
       res.on('data', chunk => { responseBody += chunk; });
       res.on('end', () => {
-        try { resolve({ status: res.statusCode, response: JSON.parse(responseBody) }); }
-        catch (err) { reject(new Error(`响应解析失败: ${err.message}`)); }
+        try { resolve({ status: res.statusCode!, response: JSON.parse(responseBody) as ApiResponse }); }
+        catch (err) { reject(new Error(`响应解析失败: ${(err as Error).message}`)); }
       });
     });
     req.on('error', err => reject(new Error(`127.0.0.1:${port}: ${err.message}`)));
@@ -97,10 +103,10 @@ async function main() {
     const arg = argv[i];
     if (arg === '--') { words.push(...argv.slice(i + 1)); break; }
     if (['--json', '--no-wait', '--help'].includes(arg)) {
-      options[arg.slice(2)] = true;
+      options[arg.slice(2) as Flag] = true;
     } else if (['--message', '-m', '--starter', '--after', '--args', '--port'].includes(arg)) {
       if (argv[i + 1] === undefined) throw new Error(`${arg} 缺少参数`);
-      options[arg === '-m' ? 'message' : arg.slice(2)] = argv[++i];
+      options[(arg === '-m' ? 'message' : arg.slice(2)) as ValueOption] = argv[++i];
     } else if (arg.startsWith('--')) {
       throw new Error(`未知选项: ${arg}`);
     } else { words.push(arg); }
@@ -120,7 +126,7 @@ async function main() {
     return;
   }
   if (!['status', 'observe', 'new', 'act', 'talk', 'wait'].includes(command)) throw new Error(`未知命令: ${command}`);
-  let payload;
+  let payload: Record<string, unknown> | undefined;
   if (!['status', 'observe', 'wait'].includes(command)) {
     payload = { action: command, message: options.message || '', wait: options['no-wait'] ? 'none' : 'auto' };
     if (command === 'new') {
@@ -132,8 +138,9 @@ async function main() {
       payload.args = options.args === undefined ? {} : JSON.parse(options.args);
       if (!payload.args || typeof payload.args !== 'object' || Array.isArray(payload.args)) throw new Error('--args 必须是 JSON 对象');
     } else {
-      payload.message = words.join(' ').trim();
-      if (!payload.message) throw new Error('talk 需要台词内容');
+      const message = words.join(' ').trim();
+      payload.message = message;
+      if (!message) throw new Error('talk 需要台词内容');
     }
   }
   const agentToken = (process.env.AGENT_TOKEN || (fs.existsSync(TOKEN_FILE) ? fs.readFileSync(TOKEN_FILE, 'utf8') : '')).trim();

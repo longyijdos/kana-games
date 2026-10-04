@@ -2,8 +2,27 @@
   "name": "@longyijdos/games",
   "version": "0.1.0",
   "description": "Turn-based games for one human and one agent, with a web UI and a shared CLI",
-  "bin": { "kana-games": "src/cli.js" },
-  "engines": { "node": ">=22" },
-  "files": ["src/**/*.js", "web", "skills"],
-  "scripts": { "start": "node src/cli.js serve" }
+  "bin": {
+    "kana-games": "dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "files": [
+    "dist/src/**/*.js",
+    "dist/web",
+    "skills"
+  ],
+  "scripts": {
+    "build": "tsc && node dist/scripts/build.js",
+    "typecheck": "tsc --noEmit",
+    "prestart": "npm run build",
+    "start": "node dist/src/cli.js serve",
+    "prepack": "npm run build"
+  },
+  "type": "module",
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^7.0.2"
+  }
 }

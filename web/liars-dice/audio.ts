@@ -1,14 +1,14 @@
 let audioEnabled = true;
-  let audioCtx = null;
+  let audioCtx: AudioContext | null = null;
 
   function initAudio() {
     if (!audioCtx) {
-      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      audioCtx = new (window.AudioContext || (window as typeof window & { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
     }
     if (audioCtx.state === 'suspended') audioCtx.resume();
   }
 
-  function sfxBeep(freq, duration, type) {
+  function sfxBeep(freq?: number, duration?: number, type?: OscillatorType) {
     if (!freq) freq = 520;
     if (!duration) duration = 0.08;
     if (!type) type = 'square';

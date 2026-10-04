@@ -1,17 +1,34 @@
+import type { ActionPayload, GameResult, GameState, HistoryEntry, Role } from '../../src/protocol.js';
+import type { Bid, DiceData, DiceDetails } from '../../src/games/liars-dice.js';
+
+type Elements = Record<'playerRack' | 'opponentRack' | 'pointPicker' | 'draftCount' | 'bidControls' | 'actionButtons' | 'draftHint' | 'connection' | 'chatHistory' | 'agentSpeech' | 'playerSpeech' | 'movePanel' | 'startControls' | 'resultDetails' | 'wildPill' | 'agentStatus' | 'playerStatus' | 'turnBadge' | 'bidLabel' | 'bidValue' | 'moveNote' | 'actionFeedback' | 'chatFeedback', HTMLElement>
+  & Record<'minusButton' | 'plusButton' | 'callButton' | 'openButton' | 'startButton' | 'sendButton' | 'audioToggle' | 'rulesToggle' | 'rulesCloseBtn' | 'rulesConfirmBtn', HTMLButtonElement>
+  & { talkInput: HTMLInputElement; chatForm: HTMLFormElement; rulesModal: HTMLDialogElement };
+
+type DiceHistory = Omit<HistoryEntry, 'sender'> & { sender: Role | 'system'; count?: number; point?: number };
+interface DiceView extends Omit<GameState<DiceData, DiceDetails>, 'data' | 'result' | 'history'> {
+  myDice: number[];
+  opponentDice?: number[];
+  currentBid: Bid | null;
+  onesAreWild: boolean;
+  history: DiceHistory[];
+  result: (DiceDetails & { winner: Role; reason: string }) | null;
+}
+
 import { connect } from '../shared/client.js';
 import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggleAudio } from './audio.js';
 
-  const $ = id => document.getElementById(id);
-  const PIPS = { 1: [4], 2: [0,8], 3: [0,4,8], 4: [0,2,6,8], 5: [0,2,4,6,8], 6: [0,2,3,5,6,8] };
-  let gameState = null;
+  const $ = <Id extends keyof Elements>(id: Id) => document.getElementById(id) as Elements[Id];
+  const PIPS: Record<number, number[]> = { 1: [4], 2: [0,8], 3: [0,4,8], 4: [0,2,6,8], 5: [0,2,4,6,8], 6: [0,2,3,5,6,8] };
+  let gameState: DiceView | null = null;
   let connected = false;
   let pendingAction = '';
-  let starter = 'player';
+  let starter: Role = 'player';
   let draft = { count: 2, point: 2 };
   let draftTouched = false;
   let historyKey = '';
 
-  function createDie(point, highlighted = false) {
+  function createDie(point: number, highlighted = false) {
     const el = document.createElement('div');
     el.className = 'pixel-die' + (highlighted ? ' highlight' : '');
     el.setAttribute('aria-label', point + ' 点');
@@ -27,7 +44,7 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     return el;
   }
 
-  function renderRack(id, dice, placeholder, highlightPoint, wild) {
+  function renderRack(id: 'playerRack' | 'opponentRack', dice: number[] | undefined, placeholder: string, highlightPoint?: number | null, wild?: boolean) {
     const rack = $(id);
     rack.replaceChildren();
     if (dice && dice.length) {
@@ -48,7 +65,7 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'point-option';
-    button.dataset.point = point;
+    button.dataset.point = String(point);
     button.setAttribute('aria-label', '选择 ' + point + ' 点');
     button.setAttribute('aria-pressed', point === draft.point ? 'true' : 'false');
     button.appendChild(createDie(point));
@@ -64,17 +81,17 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     $('pointPicker').appendChild(button);
   }
 
-  function minimumCount(point) {
+  function minimumCount(point: number) {
     const bid = gameState && gameState.currentBid;
     return bid ? bid.count + (point <= bid.point ? 1 : 0) : 2;
   }
 
-  function fitDraft(reset, bidChanged) {
+  function fitDraft(reset: boolean, bidChanged: boolean) {
     if (reset) {
       draft = { count: 2, point: 2 };
       draftTouched = false;
     }
-    if (!reset && bidChanged && !draftTouched && gameState.currentBid) {
+    if (!reset && bidChanged && !draftTouched && gameState?.currentBid) {
       const bid = gameState.currentBid;
       draft = bid.point < 6 ? { count: bid.count, point: bid.point + 1 } : { count: bid.count + 1, point: 6 };
     }
@@ -87,14 +104,14 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
   }
 
   function renderDraft() {
-    const playing = gameState && gameState.status === 'playing';
+    const playing = gameState?.status === 'playing';
     const canChoose = connected && playing && !pendingAction;
     const legal = playing && minimumCount(draft.point) <= 10 && draft.count >= minimumCount(draft.point) && draft.count <= 10;
-    const canAct = connected && playing && gameState.isMyTurn && !pendingAction;
-    $('draftCount').textContent = draft.count;
+    const canAct = connected && playing && gameState!.isMyTurn && !pendingAction;
+    $('draftCount').textContent = String(draft.count);
     $('minusButton').disabled = !canChoose || draft.count <= minimumCount(draft.point);
     $('plusButton').disabled = !canChoose || draft.count >= 10;
-    for (const button of $('pointPicker').children) {
+    for (const button of Array.from($('pointPicker').children) as HTMLButtonElement[]) {
       const point = Number(button.dataset.point);
       button.disabled = !canChoose || minimumCount(point) > 10;
       button.setAttribute('aria-pressed', point === draft.point ? 'true' : 'false');
@@ -103,19 +120,19 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     $('callButton').hidden = playing && !legal;
     $('callButton').disabled = !canAct || !legal;
     $('callButton').textContent = pendingAction === 'call' ? '正在叫点…' : `叫 ${draft.count} 个 ${draft.point}`;
-    $('openButton').disabled = !canAct || !gameState.currentBid;
+    $('openButton').disabled = !canAct || !gameState?.currentBid;
     $('openButton').textContent = pendingAction === 'open' ? '正在开盅…' : '开盅！';
     $('actionButtons').classList.toggle('only-open', playing && !legal);
-    $('draftHint').classList.toggle('warning', Boolean(playing && (!legal || (draft.point === 1 && gameState.onesAreWild))));
+    $('draftHint').classList.toggle('warning', Boolean(playing && (!legal || (draft.point === 1 && gameState!.onesAreWild))));
     $('draftHint').textContent = !playing ? '' : !legal ? '数量已达上限（10颗），必须开盅！' :
-      draft.point === 1 && gameState.onesAreWild ? '⚠️ 叫 1 点后，全场 1 点将立即失去通配属性！' :
-      gameState.currentBid ? `继续叫该点数至少要 ${minimumCount(draft.point)} 个` : '起步最少报 2 个';
+      draft.point === 1 && gameState!.onesAreWild ? '⚠️ 叫 1 点后，全场 1 点将立即失去通配属性！' :
+      gameState?.currentBid ? `继续叫该点数至少要 ${minimumCount(draft.point)} 个` : '起步最少报 2 个';
   }
 
   function refreshControls() {
     $('startButton').disabled = !connected || Boolean(pendingAction);
-    const playing = gameState && gameState.status === 'playing';
-    for (const button of document.querySelectorAll('.starter-option')) {
+    const playing = gameState?.status === 'playing';
+    for (const button of document.querySelectorAll<HTMLButtonElement>('.starter-option')) {
       button.disabled = !connected || Boolean(pendingAction) || playing;
       button.setAttribute('aria-pressed', String(button.dataset.starter === starter));
     }
@@ -126,14 +143,14 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     renderDraft();
   }
 
-  function setConnected(value) {
+  function setConnected(value: boolean) {
     connected = value;
     $('connection').textContent = value ? '骰桌在线' : '连接中…';
     $('connection').className = 'connection ' + (value ? 'online' : 'offline');
     refreshControls();
   }
 
-  function renderHistory(state, reset) {
+  function renderHistory(state: Pick<DiceView, 'history'>, reset: boolean) {
     const key = JSON.stringify(state.history);
     if (key === historyKey && !reset) return;
     historyKey = key;
@@ -172,15 +189,15 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     list.scrollTop = reset || atBottom ? list.scrollHeight : scrollTop;
   }
 
-  function renderSpeech(state, role, id) {
+  function renderSpeech(state: DiceView, role: Role, id: 'agentSpeech' | 'playerSpeech') {
     const last = [...state.history].reverse().find(entry => entry.sender === role && entry.message);
     $(id).textContent = last ? last.message : '';
     $(id).title = last ? last.message : '';
     $(id).className = 'seat-speech' + (last ? ' spoken' + (role === 'player' ? ' player' : '') : '');
   }
 
-  function renderState(previous, resetDraft) {
-    const state = gameState;
+  function renderState(previous: DiceView | null, resetDraft: boolean) {
+    const state = gameState!;
     const playing = state.status === 'playing';
     const ended = state.status === 'ended';
     const bidChanged = JSON.stringify(previous && previous.currentBid) !== JSON.stringify(state.currentBid);
@@ -200,19 +217,19 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
     $('playerStatus').textContent = ended ? '已封盅结算' : playing ? state.isMyTurn ? '👉 轮到你出招' : '⏳ 等待回应…' : '就绪';
     const badge = $('turnBadge');
     badge.className = 'turn-badge';
-    badge.textContent = playing ? state.isMyTurn ? '👉 轮到你出招！' : '⏳ Kana 思考中…' : ended ? state.result.winner === 'player' ? '🎉 你赢下了这局！' : '😈 Kana 赢下此局！' : '等待开局';
+    badge.textContent = playing ? state.isMyTurn ? '👉 轮到你出招！' : '⏳ Kana 思考中…' : ended ? state.result!.winner === 'player' ? '🎉 你赢下了这局！' : '😈 Kana 赢下此局！' : '等待开局';
     if (playing) badge.classList.add(state.isMyTurn ? 'your-turn' : 'agent-turn');
-    if (ended) badge.classList.add(state.result.winner === 'player' ? 'win' : 'lose');
+    if (ended) badge.classList.add(state.result!.winner === 'player' ? 'win' : 'lose');
     $('bidLabel').textContent = state.currentBid ? (state.currentBid.bidder === 'player' ? '你的叫点' : 'Kana 的叫点') : playing ? '等待先手起叫' : '双方各扣 5 颗';
     const value = $('bidValue');
     value.replaceChildren();
     if (state.currentBid) {
       const number = document.createElement('span');
       number.className = 'bid-number pixel';
-      number.textContent = state.currentBid.count;
+      number.textContent = String(state.currentBid.count);
       const unit = document.createElement('span');
       unit.textContent = '个';
-      value.append(number, unit, createDie(point));
+      value.append(number, unit, createDie(point!));
       value.setAttribute('aria-label', `${state.currentBid.count} 个 ${point} 点`);
     } else {
       const title = document.createElement('span');
@@ -223,7 +240,7 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
       value.removeAttribute('aria-label');
     }
     if (ended) {
-      const r = state.result;
+      const r = state.result!;
       $('resultDetails').replaceChildren();
       const line = document.createElement('div');
       line.textContent = `全场实际共有 ${r.actualCount} 个 ${r.targetPoint} 点（先前叫了 ${r.bidCount} 个${r.onesAreWild ? '，含万能 1 点' : ''}）`;
@@ -245,27 +262,27 @@ import { initAudio, sfxBeep, sfxDiceShake, sfxOpenImpact, sfxWin, sfxLose, toggl
 
 
 // Adapt the common role view to the original dice renderer.
-function diceView(view) {
+function diceView(view: GameState<DiceData, DiceDetails>): DiceView {
   const data = view.data || { myDice: [], currentBid: null, onesAreWild: true };
-  const types = { game_start: 'system', chat_talk: 'talk', action_call: 'call', action_open: 'open' };
+  const types: Record<string, string> = { game_start: 'system', chat_talk: 'talk', action_call: 'call', action_open: 'open' };
   return {
     ...view, ...data,
     history: view.history.map(entry => ({
-      ...entry, ...entry.data,
+      ...entry, ...(entry.data as { count?: number; point?: number }),
       sender: entry.type === 'game_start' && !entry.message ? 'system' : entry.sender,
       type: types[entry.type] || entry.type
     })),
-    result: view.result ? { ...view.result.details, winner: view.result.winners[0], reason: view.result.reason } : null
+    result: view.result ? { ...view.result.details!, winner: view.result.winners[0], reason: view.result.reason } : null
   };
 }
 
-const client = connect({
+const client = connect<DiceData, DiceDetails>({
   onSnapshot(snapshot, reset) {
     const previous = gameState;
     const started = snapshot.events.some(event => event.type === 'game_start');
     if (reset || started) {
       const start = snapshot.state.history.find(entry => entry.type === 'game_start');
-      if (start) starter = start.data.starter;
+      if (start) starter = start.data.starter as Role;
     }
     gameState = diceView(snapshot.state);
     renderState(previous, reset || started || (!previous && gameState.status === 'playing'));
@@ -286,7 +303,7 @@ const client = connect({
         sfxBeep(680, .09);
       } else if (event.type === 'action_open') {
         sfxOpenImpact();
-        const won = event.data.result.winners.includes('player');
+        const won = (event.data.result as GameResult<DiceDetails>).winners.includes('player');
         setTimeout(() => won ? sfxWin() : sfxLose(), 180);
       }
     }
@@ -295,10 +312,10 @@ const client = connect({
     setConnected(value);
     if (value) $('actionFeedback').textContent = '';
   },
-  onError(err) { $('actionFeedback').textContent = err.message; }
+  onError(err) { $('actionFeedback').textContent = (err as Error).message; }
 });
 
-async function doAction(payload) {
+async function doAction(payload: ActionPayload) {
   if (pendingAction || !connected) return;
   initAudio();
   pendingAction = payload.action === 'act' ? payload.move : payload.action;
@@ -307,16 +324,16 @@ async function doAction(payload) {
   refreshControls();
   try {
     await client.send(payload);
-    if (payload.move === 'call') draftTouched = false;
+    if (payload.action === 'act' && payload.move === 'call') draftTouched = false;
     if (payload.message && $('talkInput').value.trim() === payload.message) $('talkInput').value = '';
-  } catch (err) { feedback.textContent = err.message; }
+  } catch (err) { feedback.textContent = (err as Error).message; }
   finally { pendingAction = ''; refreshControls(); }
 }
 
   $('minusButton').onclick = () => { draftTouched = true; draft.count--; renderDraft(); };
   $('plusButton').onclick = () => { draftTouched = true; draft.count++; renderDraft(); };
-  for (const button of document.querySelectorAll('.starter-option')) {
-    button.onclick = () => { starter = button.dataset.starter; refreshControls(); };
+  for (const button of document.querySelectorAll<HTMLButtonElement>('.starter-option')) {
+    button.onclick = () => { starter = button.dataset.starter as Role; refreshControls(); };
   }
   $('startButton').onclick = () => doAction({ action: 'new', starter });
   $('callButton').onclick = () => doAction({ action: 'act', move: 'call', args: { ...draft }, message: $('talkInput').value.trim() });

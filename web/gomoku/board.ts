@@ -1,3 +1,6 @@
+import type { ActionArgs, GameState, Role } from '../../src/protocol.js';
+import type { GomokuData } from '../../src/games/gomoku.js';
+
 export const name = '五子棋';
 export const rules = [
   '棋盘为 15×15，先手执黑，后手执白。你和 Kana 交替在空交叉点落子。',
@@ -8,7 +11,11 @@ export const rules = [
 ];
 const SIZE = 15;
 
-export function mount({ stage, controls, act }) {
+export function mount({ stage, controls, act }: {
+  stage: HTMLElement;
+  controls: HTMLElement;
+  act(move: string, args?: ActionArgs): Promise<void>;
+}) {
   stage.innerHTML = `<div class="gomoku-table">
     <div id="boardStatus" class="board-status"></div>
     <div class="board-wrap"><div id="gomokuBoard" class="gomoku-board" aria-label="15乘15五子棋棋盘"></div></div>
@@ -16,35 +23,41 @@ export function mount({ stage, controls, act }) {
   </div>`;
   controls.innerHTML = `<div class="gomoku-controls"><span>点击空交叉点落子</span>
     <button id="resignButton" class="pixel-btn danger" type="button">认输</button></div>`;
-  const board = stage.querySelector('#gomokuBoard');
-  const cells = [];
+  const board = stage.querySelector<HTMLElement>('#gomokuBoard')!;
+  const cells: { x: number; y: number; button: HTMLButtonElement }[] = [];
   const corner = document.createElement('span');
   board.appendChild(corner);
   for (let x = 1; x <= SIZE; x++) {
     const label = document.createElement('span');
     label.className = 'board-coordinate';
-    label.textContent = x;
+    label.textContent = String(x);
     board.appendChild(label);
   }
   for (let y = 1; y <= SIZE; y++) {
     const label = document.createElement('span');
     label.className = 'board-coordinate';
-    label.textContent = y;
+    label.textContent = String(y);
     board.appendChild(label);
     for (let x = 1; x <= SIZE; x++) {
       const button = document.createElement('button');
       button.type = 'button';
-      button.dataset.x = x;
-      button.dataset.y = y;
+      button.dataset.x = String(x);
+      button.dataset.y = String(y);
       button.onclick = () => act('place', { x, y });
       cells.push({ x, y, button });
       board.appendChild(button);
     }
   }
-  const resign = controls.querySelector('#resignButton');
+  const resign = controls.querySelector<HTMLButtonElement>('#resignButton')!;
   resign.onclick = () => act('resign');
   return {
-    render(state, context) {
+    render(state: Pick<GameState<GomokuData>, 'status' | 'data'> & Partial<GameState<GomokuData>>, context: {
+      connected: boolean;
+      pendingAction: string;
+      canAct: boolean;
+      starter: Role;
+      reset: boolean;
+    }) {
       const data = state.data;
       const colors = data?.colors || {
         player: context.starter === 'player' ? 'black' : 'white',
@@ -66,9 +79,9 @@ export function mount({ stage, controls, act }) {
       }
       resign.disabled = !context.canAct;
       resign.textContent = context.pendingAction === 'resign' ? '正在认输…' : '认输';
-      stage.querySelector('#boardStatus').textContent = state.result?.reason ||
+      stage.querySelector<HTMLElement>('#boardStatus')!.textContent = state.result?.reason ||
         (state.status === 'playing' ? `第 ${(data?.moveCount || 0) + 1} 手 · ${state.isMyTurn ? '请你落子' : '等待 Kana 落子'}` : '黑子先行 · 连成五子获胜');
-      stage.querySelector('#boardNote').textContent = data?.lastMove ?
+      stage.querySelector<HTMLElement>('#boardNote')!.textContent = data?.lastMove ?
         `最后一手：${data.lastMove.role === 'player' ? '你' : 'Kana'} (${data.lastMove.x}, ${data.lastMove.y})` : '横轴 x → · 纵轴 y ↓ · 坐标 1～15';
       return { agent: colors.agent === 'black' ? '执黑 · 先手' : '执白 · 后手', player: colors.player === 'black' ? '执黑 · 先手' : '执白 · 后手' };
     }

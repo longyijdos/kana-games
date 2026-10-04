@@ -14,7 +14,10 @@ Requires Node.js 22 or newer and the `kana-games` executable from
 `@longyijdos/games`. From a local source checkout, install with:
 
 ```sh
-npm install --global /absolute/path/to/kana-games
+cd /absolute/path/to/kana-games
+npm ci
+npm run build
+npm install --global .
 kana-games --version
 ```
 
