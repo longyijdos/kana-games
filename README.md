@@ -128,8 +128,8 @@ CLI 保存最近读取的事件序号，下次动作或 `wait` 增量读取。
 连接提示和错误。动作请求为 `{ action: 'new', starter }`、
 `{ action: 'act', move, args, message }` 或 `{ action: 'talk', message }`。
 
-当前两款游戏各自用 `board.js` 渲染游戏区；这是游戏内部的组织方式，
-新游戏可以自行组织 HTML、CSS 和脚本，无需复用现有布局。
+大话骰保留原页面布局，在 `app.js` 中适配公共状态；五子棋用 `board.js`
+渲染棋盘。新游戏可以自行组织 HTML、CSS 和脚本，无需复用现有布局。
 
 ## Skill 文档
 
