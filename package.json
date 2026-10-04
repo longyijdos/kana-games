@@ -1,0 +1,9 @@
+{
+  "name": "@longyijdos/games",
+  "version": "0.1.0",
+  "description": "Turn-based games for one human and one agent, with a web UI and a shared CLI",
+  "bin": { "kana-games": "src/cli.js" },
+  "engines": { "node": ">=22" },
+  "files": ["src/**/*.js", "web", "skills"],
+  "scripts": { "start": "node src/cli.js serve" }
+}

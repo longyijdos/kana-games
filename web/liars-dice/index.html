@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Liar’s Dice Arcade · 大话骰</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1 class="pixel"><span aria-hidden="true">🎮</span> LIAR’S DICE</h1>
+      <div class="header-controls">
+        <span id="connection" class="connection" role="status">连接中</span>
+        <button id="rulesToggle" class="small-btn" type="button">📖 玩法说明</button>
+        <button id="audioToggle" class="small-btn" type="button" aria-pressed="true">🔊 音效开</button>
+      </div>
+    </header>
+    <main class="game-layout">
+      <section class="pixel-box table" aria-label="游戏桌">
+        <div class="game-toolbar">
+          <label>先手 <select id="starterSelect" disabled><option value="player">你</option><option value="agent">Kana</option></select></label>
+          <button id="startButton" class="pixel-btn primary" type="button" disabled>开始对局</button>
+        </div>
+        <div class="seat">
+          <div class="seat-header">
+            <div class="profile">
+              <div class="avatar" aria-hidden="true"><svg class="kana-avatar-icon" viewBox="0 0 16 16" width="34" height="34" fill="none" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" aria-label="Kana">
+                  <rect x="7" y="0" width="2" height="1" fill="#d8b4fe" />
+                  <rect x="6" y="1" width="4" height="1" fill="#d8b4fe" />
+                  <rect x="4" y="2" width="8" height="1" fill="#a855f7" />
+                  <rect x="3" y="3" width="10" height="1" fill="#a855f7" />
+                  <rect x="2" y="4" width="3" height="1" fill="#a855f7" />
+                  <rect x="5" y="4" width="1" height="1" fill="#6b21a8" />
+                  <rect x="6" y="4" width="4" height="1" fill="#a855f7" />
+                  <rect x="10" y="4" width="1" height="1" fill="#6b21a8" />
+                  <rect x="11" y="4" width="3" height="1" fill="#a855f7" />
+                  <rect x="2" y="5" width="1" height="1" fill="#a855f7" />
+                  <rect x="3" y="5" width="2" height="1" fill="#6b21a8" />
+                  <rect x="5" y="5" width="6" height="1" fill="#ffedd5" />
+                  <rect x="11" y="5" width="2" height="1" fill="#6b21a8" />
+                  <rect x="13" y="5" width="1" height="1" fill="#a855f7" />
+                  <rect x="2" y="6" width="2" height="1" fill="#6b21a8" />
+                  <rect x="4" y="6" width="1" height="1" fill="#ffedd5" />
+                  <rect x="5" y="6" width="1" height="1" fill="#451a03" />
+                  <rect x="6" y="6" width="1" height="1" fill="#ffffff" />
+                  <rect x="7" y="6" width="2" height="1" fill="#ffedd5" />
+                  <rect x="9" y="6" width="1" height="1" fill="#ffffff" />
+                  <rect x="10" y="6" width="1" height="1" fill="#451a03" />
+                  <rect x="11" y="6" width="1" height="1" fill="#ffedd5" />
+                  <rect x="12" y="6" width="1" height="1" fill="undefined" />
+                  <rect x="13" y="6" width="1" height="1" fill="#6b21a8" />
+                  <rect x="2" y="7" width="2" height="1" fill="#6b21a8" />
+                  <rect x="4" y="7" width="1" height="1" fill="#f472b6" />
+                  <rect x="5" y="7" width="2" height="1" fill="#78350f" />
+                  <rect x="7" y="7" width="2" height="1" fill="#ffedd5" />
+                  <rect x="9" y="7" width="1" height="1" fill="#f472b6" />
+                  <rect x="10" y="7" width="2" height="1" fill="#78350f" />
+                  <rect x="12" y="7" width="1" height="1" fill="#f472b6" />
+                  <rect x="13" y="7" width="1" height="1" fill="#6b21a8" />
+                  <rect x="2" y="8" width="2" height="1" fill="#6b21a8" />
+                  <rect x="4" y="8" width="3" height="1" fill="#ffedd5" />
+                  <rect x="7" y="8" width="2" height="1" fill="#e11d48" />
+                  <rect x="9" y="8" width="3" height="1" fill="#ffedd5" />
+                  <rect x="12" y="8" width="2" height="1" fill="#6b21a8" />
+                  <rect x="3" y="9" width="2" height="1" fill="#6b21a8" />
+                  <rect x="5" y="9" width="6" height="1" fill="#ffedd5" />
+                  <rect x="11" y="9" width="2" height="1" fill="#6b21a8" />
+                  <rect x="3" y="10" width="1" height="1" fill="#a855f7" />
+                  <rect x="4" y="10" width="1" height="1" fill="#6b21a8" />
+                  <rect x="6" y="10" width="4" height="1" fill="#ffedd5" />
+                  <rect x="11" y="10" width="1" height="1" fill="#6b21a8" />
+                  <rect x="12" y="10" width="1" height="1" fill="#a855f7" />
+                  <rect x="2" y="11" width="1" height="1" fill="#a855f7" />
+                  <rect x="3" y="11" width="2" height="1" fill="#6b21a8" />
+                  <rect x="6" y="11" width="4" height="1" fill="#2e1065" />
+                  <rect x="11" y="11" width="2" height="1" fill="#6b21a8" />
+                  <rect x="13" y="11" width="1" height="1" fill="#a855f7" />
+                  <rect x="1" y="12" width="1" height="1" fill="#a855f7" />
+                  <rect x="2" y="12" width="2" height="1" fill="#6b21a8" />
+                  <rect x="4" y="12" width="2" height="1" fill="#2e1065" />
+                  <rect x="6" y="12" width="4" height="1" fill="#facc15" />
+                  <rect x="10" y="12" width="2" height="1" fill="#2e1065" />
+                  <rect x="12" y="12" width="2" height="1" fill="#6b21a8" />
+                  <rect x="14" y="12" width="1" height="1" fill="#a855f7" />
+                  <rect x="1" y="13" width="2" height="1" fill="#6b21a8" />
+                  <rect x="3" y="13" width="10" height="1" fill="#2e1065" />
+                  <rect x="13" y="13" width="2" height="1" fill="#6b21a8" />
+                  <rect x="0" y="14" width="2" height="1" fill="#6b21a8" />
+                  <rect x="4" y="14" width="8" height="1" fill="#2e1065" />
+                  <rect x="14" y="14" width="2" height="1" fill="#6b21a8" />
+                  <rect x="0" y="15" width="2" height="1" fill="#6b21a8" />
+                  <rect x="14" y="15" width="2" height="1" fill="#6b21a8" />
+                </svg></div>
+              <div><div class="seat-name pixel">KANA</div><div id="agentNote" class="seat-note">你的对手</div></div>
+            </div>
+            <span id="agentStatus" class="seat-status">等待开局</span>
+          </div>
+          <p id="agentSpeech" class="seat-speech"></p>
+        </div>
+        <div id="turnBadge" class="turn-badge" role="status">等待开局</div>
+        <div id="gameArea" class="game-area"></div>
+        <div class="seat">
+          <div class="seat-header">
+            <div class="profile">
+              <div class="avatar player" aria-hidden="true">🙂</div>
+              <div><div class="seat-name player pixel">YOU</div><div id="playerNote" class="seat-note">准备好就开始吧</div></div>
+            </div>
+            <span id="playerStatus" class="seat-status">等待开局</span>
+          </div>
+          <p id="playerSpeech" class="seat-speech"></p>
+        </div>
+        <div id="movePanel" class="move-panel" hidden></div>
+        <p id="actionFeedback" class="feedback" role="status"></p>
+      </section>
+      <aside class="pixel-box chat-panel" aria-label="对局聊天">
+        <div class="chat-header"><strong class="chat-title pixel">TABLE TALK</strong><span>对局记录 · 实时聊天</span></div>
+        <ol id="chatHistory" class="chat-history" aria-label="对局记录"></ol>
+        <form id="chatForm" class="chat-form">
+          <div class="composer">
+            <input id="talkInput" placeholder="说点什么，也可以随出招一起发送…" aria-label="聊天内容" autocomplete="off" disabled>
+            <button id="sendButton" class="pixel-btn send-btn" type="submit" disabled>发送</button>
+          </div>
+          <p class="composer-note">聊天随时可发，出招时会附上输入框里的话。</p>
+          <p id="chatFeedback" class="feedback" role="status"></p>
+        </form>
+      </aside>
+    </main>
+    <footer class="arcade-footer">大话骰 · 虚实之间见真章。</footer>
+  </div>
+  <dialog id="rulesModal" class="rules-dialog">
+    <div class="rules-dialog-header">
+      <strong id="rulesTitle" class="rules-dialog-title"></strong>
+      <button id="rulesCloseBtn" class="rules-close-btn" aria-label="关闭" type="button">✕</button>
+    </div>
+    <div id="rulesContent" class="rules-content"></div>
+    <div class="rules-dialog-footer"><button id="rulesConfirmBtn" class="pixel-btn" type="button">开始玩吧</button></div>
+  </dialog>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

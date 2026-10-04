@@ -1,0 +1,5 @@
+node_modules/
+src/.agent-token
+src/.agent-cursor
+*.tgz
+.DS_Store
