@@ -23,17 +23,20 @@ kana-games serve gomoku
 端口用 `--port` 或 `PORT` 设置，默认 3456，服务与客户端使用同一端口。
 Agent Token 与事件游标保存在 `~/.kana-games/<端口>.json`，重启服务会更换 Token。
 
-随包附带两个 Agent skill：`kana-games-play`（陪用户玩）和 `kana-games-create`（帮用户做游戏）。
-一条命令装进 Agent 的全局 skill 目录：
+随包附带两个 Agent skill：`kana-games-play`（陪用户玩）和 `kana-games-create`（帮用户做游戏），
+以及陪玩子 Agent `kana-games-player`：主 Agent 开好服务后把对局交给它，自己继续和用户聊别的。
+一条命令装进 Agent 的全局目录：
 
 ```sh
-kana-games skills claude   # ${CLAUDE_CONFIG_DIR:-~/.claude}/skills
-kana-games skills codex    # ${CODEX_HOME:-~/.codex}/skills
-kana-games skills kana     # ${KANA_HOME:-~/.kana}/skills，需在 Kana 的 /skills 中启用
-kana-games skills ./some/dir
+kana-games install claude            # ${CLAUDE_CONFIG_DIR:-~/.claude} 下的 skills/ 与 agents/
+kana-games install codex kana        # 可一次装多个；Kana 需在 /skills 中启用 skill
+kana-games install claude --skills-only
+kana-games install ./some/dir        # 其它 Agent：只装 skill
 ```
 
-已有同名 skill 时跳过，升级 kana-games 后用 `--force` 覆盖。
+子 Agent 只装给 Claude Code、Codex 和 Kana；`--skills-only` 只装 skill。
+已有同名文件时跳过，升级 kana-games 后用 `--force` 覆盖。
+子 Agent 的内容维护在 `agents/kana-games-player.md`，安装时转换成各家的格式。
 
 ## 命令
 
@@ -42,12 +45,12 @@ kana-games skills ./some/dir
 | `serve <game\|./dir>` | 前台启动内置游戏或外部游戏目录 |
 | `games` | 列出内置游戏 |
 | `rules` | 查看当前游戏规则 |
-| `skills <claude\|codex\|kana\|目录>` | 安装随包附带的 Agent skill，`--force` 覆盖已有 |
+| `install <claude\|codex\|kana\|目录>...` | 安装 skill 与陪玩子 Agent；`--skills-only` 只装 skill，`--force` 覆盖已有 |
 | `status` / `observe` | Agent 可见的状态、历史和可用动作 |
 | `new [--starter player\|agent]` | 开新局，默认用户先手 |
 | `act <action> --args '<JSON>'` | 执行游戏动作，参数默认为 `{}` |
 | `talk <message>` | 桌边聊天，不消耗行动权 |
-| `wait` | 等待未读事件或 Agent 行动权，最长十分钟 |
+| `wait [--timeout <秒>]` | 等待未读事件或 Agent 行动权，默认最长十分钟 |
 
 `new`、`act` 可用 `-m` 附带台词。动作命令立即返回；Agent 把行动权交给用户后，
 用宿主的后台任务机制运行 `wait`。

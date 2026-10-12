@@ -17,9 +17,10 @@ npm install --global kana-games
 kana-games --version
 ```
 
-`kana-games skills <claude|codex|kana|dir>` installs this skill and
-`kana-games-create` into an agent's global skill directory; add
-`--force` to update them after upgrading kana-games.
+`kana-games install <claude|codex|kana|dir>...` installs this skill,
+`kana-games-create`, and (for Claude Code, Codex and Kana) the
+`kana-games-player` companion subagent. Add `--skills-only` to skip the
+subagent and `--force` to update after upgrading kana-games.
 
 ## Games
 
@@ -53,6 +54,24 @@ server and serve the other game.
 Read `state.isMyTurn`, `state.availableActions`, `state.data`, and the visible
 history. Never use server internals to inspect the opponent's hidden state.
 Available actions are empty when it is not the Agent's turn.
+
+## Companion Subagent (preferred)
+
+If the host has a `kana-games-player` subagent (installed by
+`kana-games install claude|codex|kana`), hand the match to it so this
+conversation stays free:
+
+1. Start `kana-games serve <game> --port <port>` as a background job you own.
+2. Tell the user the URL and that Kana is waiting at the table.
+3. Spawn `kana-games-player` in the background with a task such as
+   "Play the gomoku match on port 3456 with the user." Add anything it should
+   know (the user's language, whether to start the game itself).
+4. Do not run `wait`, `act`, or `talk` on that port while it plays; it owns the
+   CLI's event cursor.
+5. When it finishes, relay its short report if useful and stop the server.
+
+The subagent only plays; it never starts or stops servers. Without such a
+subagent, play directly as described below.
 
 ## Act and Talk
 
@@ -91,7 +110,8 @@ When the job completes, consume its output:
 - If `state.status` is `ended`, acknowledge the result in-game. Start a new match
   only when the user wants to continue; use `wait` if the user will start it.
 
-`wait` returns unread events or the Agent's turn, with a ten-minute timeout.
+`wait` returns unread events or the Agent's turn, with a ten-minute timeout;
+`--timeout <seconds>` shortens it when the host limits command duration.
 
 ## Output and Cleanup
 

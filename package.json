@@ -22,10 +22,11 @@
     "dist/src",
     "dist/web",
     "dist/games",
-    "skills"
+    "skills",
+    "agents"
   ],
   "scripts": {
-    "build": "tsc && node dist/scripts/build.js",
+    "build": "node -e \"require('node:fs').rmSync('dist', { recursive: true, force: true })\" && tsc && node dist/scripts/build.js",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node --test 'dist/test/**/*.test.js'",
     "prestart": "npm run build",

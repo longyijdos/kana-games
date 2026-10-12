@@ -69,6 +69,8 @@ test('server: agent wait wakes when the player acts', async () => {
     const waiting = post('/api/v1/wait', 'agent', { after: 1 });
     await post('/api/v1/action', playerToken, place(8, 8));
     const woke = await waiting;
+    const idle = await post('/api/v1/wait', playerToken, { timeoutMs: 50, waitFor: 'event' });
+    assert.equal(idle.timedOut, true);
     assert.equal(woke.state.isMyTurn, true);
     assert.deepEqual(woke.events.map((event: { type: string }) => event.type), ['place']);
     const page = await fetch(base + '/');
