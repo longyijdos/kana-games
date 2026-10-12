@@ -1,5 +1,5 @@
 ---
-name: create-turn-based-game
+name: kana-games-create
 description: Design and build a new turn-based game for kana-games (one human in the browser, one Agent on the CLI). Use when the user wants to create, prototype, or modify their own game for kana-games.
 ---
 
@@ -181,5 +181,5 @@ curl -s -XPOST localhost:3460/api/v1/action -H "Authorization: Bearer $TOKEN" \
 an illegal move, a finished game, and starting the next game. `serve` reports
 a missing or malformed `game.ts` export at startup.
 
-After the game works, play it with the user through the `turn-based-games`
+After the game works, play it with the user through the `kana-games-play`
 skill.

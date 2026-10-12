@@ -1,5 +1,5 @@
 ---
-name: turn-based-games
+name: kana-games-play
 description: Play turn-based games with one human and one Agent using the kana-games CLI and a local web UI. Use when the user wants to play a built-in or custom board, dice, or card game, or continue an existing match.
 ---
 
@@ -18,7 +18,7 @@ kana-games --version
 ```
 
 `kana-games skills <claude|codex|kana|dir>` installs this skill and
-`create-turn-based-game` into an agent's global skill directory; add
+`kana-games-create` into an agent's global skill directory; add
 `--force` to update them after upgrading kana-games.
 
 ## Games
@@ -28,7 +28,7 @@ Built-in games have a reference with rules and strategy notes:
 - [大话骰 / Liar's Dice](references/liars-dice.md) — `liars-dice`
 - [五子棋 / Gomoku](references/gomoku.md) — `gomoku`
 
-Custom games are directories (see the `create-turn-based-game` skill). For
+Custom games are directories (see the `kana-games-create` skill). For
 any game, `kana-games rules` prints the rules from the running server; read
 them before the first move of an unfamiliar game.
 

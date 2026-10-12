@@ -5,7 +5,7 @@
 
 - **自带游戏**：大话骰（像素街机风）、五子棋（木纹棋盘）。
 - **自己做游戏**：一个目录、一个规则文件、一个网页，`kana-games serve ./my-game` 即可开玩。
-  可以让 Agent 按 `skills/create-turn-based-game` 帮你设计。
+  可以让 Agent 按 `skills/kana-games-create` 帮你设计。
 
 ## 安装与启动
 
@@ -23,7 +23,7 @@ kana-games serve gomoku
 端口用 `--port` 或 `PORT` 设置，默认 3456，服务与客户端使用同一端口。
 Agent Token 与事件游标保存在 `~/.kana-games/<端口>.json`，重启服务会更换 Token。
 
-随包附带两个 Agent skill：`turn-based-games`（陪用户玩）和 `create-turn-based-game`（帮用户做游戏）。
+随包附带两个 Agent skill：`kana-games-play`（陪用户玩）和 `kana-games-create`（帮用户做游戏）。
 一条命令装进 Agent 的全局 skill 目录：
 
 ```sh
@@ -72,7 +72,7 @@ my-game/
 ```
 
 框架负责回合、开局结算、参数校验、聊天记录和 Agent CLI；游戏只写规则和页面。
-完整约定和示例见 [skills/create-turn-based-game/SKILL.md](skills/create-turn-based-game/SKILL.md)，
+完整约定和示例见 [skills/kana-games-create/SKILL.md](skills/kana-games-create/SKILL.md)，
 内置游戏 `games/gomoku`、`games/liars-dice` 也是按同样约定写的范例。
 
 `game.ts` 由 Node 直接运行（自动去掉类型），类型从 `kana-games` 导入：

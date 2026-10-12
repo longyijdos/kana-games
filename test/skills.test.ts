@@ -12,11 +12,11 @@ test('skills: installs bundled skills, keeps existing ones unless forced', () =>
     const first = installSkills('kana', false);
     assert.equal(first.dir, path.join(root, 'skills'));
     assert.deepEqual(first.results.map(result => result.status), ['installed', 'installed']);
-    assert.ok(fs.existsSync(path.join(root, 'skills/turn-based-games/references/gomoku.md')));
-    fs.writeFileSync(path.join(root, 'skills/turn-based-games/SKILL.md'), 'local edit');
+    assert.ok(fs.existsSync(path.join(root, 'skills/kana-games-play/references/gomoku.md')));
+    fs.writeFileSync(path.join(root, 'skills/kana-games-play/SKILL.md'), 'local edit');
     assert.deepEqual(installSkills('kana', false).results.map(result => result.status), ['skipped', 'skipped']);
     assert.deepEqual(installSkills(path.join(root, 'skills'), true).results.map(result => result.status), ['replaced', 'replaced']);
-    assert.notEqual(fs.readFileSync(path.join(root, 'skills/turn-based-games/SKILL.md'), 'utf8'), 'local edit');
+    assert.notEqual(fs.readFileSync(path.join(root, 'skills/kana-games-play/SKILL.md'), 'utf8'), 'local edit');
   } finally {
     delete process.env.KANA_HOME;
     fs.rmSync(root, { recursive: true, force: true });

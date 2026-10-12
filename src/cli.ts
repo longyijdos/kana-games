@@ -91,13 +91,16 @@ async function main() {
     if (json) return console.log(JSON.stringify({ success: true, dir, skills: results }, null, 2));
     const labels = { installed: '已安装', replaced: '已覆盖', skipped: '已存在，跳过（--force 覆盖）' };
     console.log(`Skill 目录: ${dir}\n` + results.map(({ name, status }) => `  ${name}  ${labels[status]}`).join('\n'));
-    if (words[0] === 'kana') console.log('Kana 的全局 skill 需在 /skills 中启用后才会自动发现，也可以用 @turn-based-games 直接调用。');
+    if (words[0] === 'kana') console.log('Kana 的全局 skill 需在 /skills 中启用后才会自动发现，也可以用 @kana-games-play 直接调用。');
     return;
   }
   const port = Number(options.port || process.env.PORT || 3456);
   if (!Number.isInteger(port) || port < 1 || port > 65535) throw new Error('port 必须是 1 至 65535 的整数');
   if (command === 'serve') {
-    if (words.length !== 1) throw new Error('用法: kana-games serve <内置游戏名|游戏目录>');
+    if (words.length !== 1) {
+      const list = await Promise.all(builtinGames().map(async id => `${id}（${(await loadGame(id)).game.name}）`));
+      throw new Error(`用法: kana-games serve <内置游戏名|游戏目录>\n内置游戏: ${list.join('、')}`);
+    }
     startServer(await loadGame(words[0]), { port, json }).once('error', fail);
     return;
   }
