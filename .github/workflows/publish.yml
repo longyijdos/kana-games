@@ -37,10 +37,20 @@ jobs:
             exit 1
           fi
 
+      - name: Check whether this version is already on npm
+        id: published
+        run: |
+          if npm view "$(node -p "require('./package.json').name")@${GITHUB_REF_NAME#v}" version >/dev/null 2>&1; then
+            echo "Version ${GITHUB_REF_NAME#v} is already published; skipping npm publish."
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install dependencies
+        if: steps.published.outputs.exists != 'true'
         run: npm ci --include=dev
 
       - name: Publish package
+        if: steps.published.outputs.exists != 'true'
         run: npm publish --access public
 
   release:
