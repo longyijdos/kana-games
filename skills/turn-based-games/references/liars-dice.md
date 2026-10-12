@@ -1,7 +1,7 @@
 # 大话骰 / Liar's Dice
 
 Game ID: `liars-dice`. Start the server with `kana-games serve liars-dice` and open
-`http://127.0.0.1:3456/liars-dice/`. The game is selected at server startup.
+`http://127.0.0.1:3456/`.
 
 ## Rules
 
@@ -20,12 +20,12 @@ Game ID: `liars-dice`. Start the server with `kana-games serve liars-dice` and o
 ## Start
 
 ```sh
-kana-games new --starter player -m '来一局大话骰！' --no-wait
+kana-games new --starter player -m '来一局大话骰！'
 kana-games status --json
 ```
 
-`state.data` contains `myDice`, `opponentDiceCount`, `currentBid`, and
-`onesAreWild`. After resolution, it also contains `opponentDice`.
+`state.data` contains `myDice`, `currentBid`, `onesAreWild`, and
+`minimumCountByPoint`. After resolution, it also contains `opponentDice`.
 `state.result.details` describes the challenged bid, actual count, and revealed
 dice. The result's `winners` array identifies the winner.
 
@@ -34,17 +34,17 @@ dice. The result's `winners` array identifies the winner.
 ### Bid: `call`
 
 ```sh
-kana-games act call --args '{"count":3,"point":4}' -m '三个四，你敢开吗？' --no-wait
+kana-games act call --args '{"count":3,"point":4}' -m '三个四，你敢开吗？'
 ```
 
-Both arguments are integers. Read `availableActions` for permitted pip values
-and `minimumCountByPoint` for the minimum quantity of each pip value.
+Both arguments are integers. `availableActions` lists permitted pip values;
+`state.data.minimumCountByPoint` gives the minimum quantity for each of them.
 When no legal higher bid exists, only `open` is available.
 
 ### Challenge: `open`
 
 ```sh
-kana-games act open -m '开！' --no-wait
+kana-games act open -m '开！'
 ```
 
 No arguments. Available only when a bid exists and it is the Agent's turn.

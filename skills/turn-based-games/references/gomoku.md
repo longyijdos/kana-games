@@ -1,7 +1,7 @@
 # 五子棋 / Gomoku
 
 Game ID: `gomoku`. Start the server with `kana-games serve gomoku` and open
-`http://127.0.0.1:3456/gomoku/`. The game is selected at server startup.
+`http://127.0.0.1:3456/`.
 
 ## Rules and Coordinates
 
@@ -18,7 +18,7 @@ Game ID: `gomoku`. Start the server with `kana-games serve gomoku` and open
 ## Start and Observe
 
 ```sh
-kana-games new --starter player -m '你执黑先行。' --no-wait
+kana-games new --starter player -m '你执黑先行。'
 kana-games status --json
 ```
 
@@ -44,17 +44,17 @@ an empty intersection. Row labels are `y`; column labels are `x`.
 Choose an empty intersection from the current board before submitting:
 
 ```sh
-kana-games act place --args '{"x":8,"y":8}' -m '先占个中心。' --no-wait
+kana-games act place --args '{"x":8,"y":8}' -m '先占个中心。'
 ```
 
-Both coordinates must be integers 1–15. Occupied intersections, out-of-range
+Occupied intersections, out-of-range
 coordinates, and actions outside the Agent's turn return an error without
 changing the board.
 
 ### Resign: `resign`
 
 ```sh
-kana-games act resign -m '这局认输，下一局再来。' --no-wait
+kana-games act resign -m '这局认输，下一局再来。'
 ```
 
 No arguments. Available on the Agent's turn while the game is playing.

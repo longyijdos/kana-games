@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>五子棋 · Kana</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand"><h1>五子棋</h1><span>十五路 · 无禁手</span></div>
+    <div class="tools">
+      <span id="connection" class="connection" role="status">连接中…</span>
+      <button id="rulesToggle" class="ghost-btn" type="button">玩法说明</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="table" aria-label="棋盘">
+      <div class="players">
+        <div id="playerSeat" class="seat"><i id="playerStone" class="stone-icon"></i><div><strong>你</strong><p id="playerSpeech" class="speech"></p></div></div>
+        <span id="turnBadge" class="turn-badge" role="status">等待开局</span>
+        <div id="agentSeat" class="seat agent"><div><strong>Kana</strong><p id="agentSpeech" class="speech"></p></div><i id="agentStone" class="stone-icon"></i></div>
+      </div>
+
+      <div class="board-wrap">
+        <div id="board" class="board" aria-label="15乘15五子棋棋盘">
+          <div id="coordsX" class="coords x" aria-hidden="true"></div>
+          <div id="coordsY" class="coords y" aria-hidden="true"></div>
+          <div class="grid">
+            <svg id="boardLines" class="board-lines" viewBox="-0.5 -0.5 15 15" aria-hidden="true"></svg>
+            <div id="points" class="points"></div>
+          </div>
+          <div id="overlay" class="overlay">
+            <div class="overlay-card">
+              <p id="overlayTitle" class="overlay-title">新的一局</p>
+              <p id="overlayText" class="overlay-text">先手执黑，连成五子获胜。</p>
+              <div class="starter-picker" role="group" aria-label="选择先手">
+                <button class="starter-option" data-starter="player" type="button" aria-pressed="true">我先手</button>
+                <button class="starter-option" data-starter="agent" type="button" aria-pressed="false">Kana 先手</button>
+              </div>
+              <button id="startButton" class="primary-btn" type="button" disabled>开始对局</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="table-footer">
+        <span id="moveInfo">横轴 x → · 纵轴 y ↓</span>
+        <p id="actionFeedback" class="feedback" role="status"></p>
+        <button id="resignButton" class="ghost-btn danger" type="button" hidden>认输</button>
+      </div>
+    </section>
+
+    <aside class="chat" aria-label="对局记录与聊天">
+      <div class="chat-heading"><h2>对局记录</h2><span>一手棋，一句话</span></div>
+      <ol id="chatHistory" class="chat-history"></ol>
+      <form id="chatForm" class="chat-form">
+        <div class="composer">
+          <input id="talkInput" placeholder="和 Kana 说点什么…" autocomplete="off" aria-label="台词" disabled>
+          <button id="sendButton" class="primary-btn" type="submit" disabled>发送</button>
+        </div>
+        <p class="composer-note">Enter 发送 · 落子时会附带输入框里的台词</p>
+        <p id="chatFeedback" class="feedback" role="status"></p>
+      </form>
+    </aside>
+  </main>
+
+  <dialog id="rulesModal" class="rules-dialog">
+    <div class="rules-heading"><strong>五子棋 · 玩法说明</strong><button id="rulesCloseBtn" class="ghost-btn" type="button">关闭</button></div>
+    <div id="rulesContent" class="rules-content"></div>
+  </dialog>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>

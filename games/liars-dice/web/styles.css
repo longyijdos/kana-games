@@ -217,3 +217,4 @@
 .starter-option:hover:not(:disabled) { background: #2a224a; color: #e9d5ff; }
 .starter-option[aria-pressed="true"] { background: #143040; border-color: var(--neon-cyan); color: #a5f3fc; box-shadow: inset -2px -2px #0b2330, inset 2px 2px #1d485c; }
 @media (max-height: 780px) { .start-controls { margin-top: 10px; } .start-controls .start-btn { margin-top: 0; } }
+.result-reason { margin-top: 4px; font-weight: bold; }

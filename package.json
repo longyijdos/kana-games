@@ -1,26 +1,59 @@
 {
-  "name": "@longyijdos/games",
+  "name": "kana-games",
   "version": "0.1.0",
-  "description": "Turn-based games for one human and one agent, with a web UI and a shared CLI",
+  "description": "Turn-based games for one human and one agent: a small framework, a shared CLI and built-in games",
+  "type": "module",
   "bin": {
     "kana-games": "dist/src/cli.js"
   },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts"
+    },
+    "./client": {
+      "types": "./dist/web/client.d.ts",
+      "default": "./dist/web/client.js"
+    }
+  },
   "engines": {
-    "node": ">=22"
+    "node": ">=22.18"
   },
   "files": [
-    "dist/src/**/*.js",
+    "dist/src",
     "dist/web",
+    "dist/games",
     "skills"
   ],
   "scripts": {
     "build": "tsc && node dist/scripts/build.js",
     "typecheck": "tsc --noEmit",
+    "test": "npm run build && node --test 'dist/test/**/*.test.js'",
     "prestart": "npm run build",
     "start": "node dist/src/cli.js serve",
     "prepack": "npm run build"
   },
-  "type": "module",
+  "keywords": [
+    "agent",
+    "turn-based",
+    "game",
+    "cli",
+    "skills",
+    "gomoku",
+    "liars-dice"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/longyijdos/kana-games.git"
+  },
+  "homepage": "https://github.com/longyijdos/kana-games#readme",
+  "bugs": {
+    "url": "https://github.com/longyijdos/kana-games/issues"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
+  "license": "MIT",
   "devDependencies": {
     "@types/node": "^22.20.5",
     "typescript": "^7.0.2"

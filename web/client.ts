@@ -1,8 +1,11 @@
-import type { ActionPayload, ApiResponse, Snapshot } from '../../src/protocol.js';
+import type { ActionPayload, ApiResponse, GameInfo, Snapshot } from '../src/protocol.js';
 
-// Each page owns its UI. This client only authenticates, sends actions and syncs events.
-export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConnection, onError }: {
-  onSnapshot(snapshot: Snapshot<Data, Details>, reset: boolean): void;
+export type * from '../src/protocol.js';
+
+// Served at /_kana/client.js. Each page owns its UI; this client only authenticates,
+// sends actions and keeps the page in sync through long polling.
+export function connect<View = unknown, Details = unknown>({ onSnapshot, onConnection, onError }: {
+  onSnapshot(snapshot: Snapshot<View, Details>, reset: boolean): void;
   onConnection(connected: boolean): void;
   onError(error: Error): void;
 }) {
@@ -15,7 +18,7 @@ export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConne
     onConnection(value);
   }
 
-  function applySnapshot(snapshot: Snapshot<Data, Details>, reset = false) {
+  function applySnapshot(snapshot: Snapshot<View, Details>, reset = false) {
     if (reset) seq = 0;
     if (snapshot.seq < seq) return;
     const events = snapshot.events.filter(event => event.seq > seq);
@@ -28,7 +31,7 @@ export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConne
     if (!authResponse.ok) throw new Error('连接失败');
     playerToken = ((await authResponse.json()) as { playerToken: string }).playerToken;
     const response = await fetch('/api/v1/state', { headers: { Authorization: 'Bearer ' + playerToken } });
-    const snapshot = await response.json() as ApiResponse<Data, Details>;
+    const snapshot = await response.json() as ApiResponse<View, Details>;
     if (!response.ok || !snapshot.success) throw new Error(snapshot.error || '读取状态失败');
     applySnapshot(snapshot, true);
     setConnected(true);
@@ -42,7 +45,7 @@ export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConne
           method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + playerToken },
           body: JSON.stringify({ after: seq, timeoutMs: 30000, waitFor: 'event' })
         });
-        const snapshot = await response.json() as ApiResponse<Data, Details>;
+        const snapshot = await response.json() as ApiResponse<View, Details>;
         if (!response.ok || !snapshot.success) throw new Error(snapshot.error || '订阅失败');
         applySnapshot(snapshot);
       } catch (err) {
@@ -57,9 +60,9 @@ export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConne
     if (!connected) throw new Error('当前尚未连接');
     const response = await fetch('/api/v1/action', {
       method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + playerToken },
-      body: JSON.stringify({ ...payload, after: seq, wait: 'none' })
+      body: JSON.stringify({ ...payload, after: seq })
     });
-    const snapshot = await response.json() as ApiResponse<Data, Details>;
+    const snapshot = await response.json() as ApiResponse<View, Details>;
     if (snapshot.state) applySnapshot(snapshot);
     if (!response.ok || !snapshot.success) {
       if (response.status === 403) setConnected(false);
@@ -68,6 +71,10 @@ export function connect<Data = unknown, Details = unknown>({ onSnapshot, onConne
     return snapshot;
   }
 
+  async function info() {
+    return await (await fetch('/api/v1/game')).json() as GameInfo;
+  }
+
   subscribe();
-  return { send };
+  return { send, info };
 }

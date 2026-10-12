@@ -1,6 +1,6 @@
 export type Role = 'player' | 'agent';
 export type GameStatus = 'waiting' | 'playing' | 'ended';
-export type ActionArgs = Record<string, unknown>;
+export type ActionArgs = Record<string, number>;
 
 export interface GameResult<Details = unknown> {
   outcome: 'win' | 'draw';
@@ -20,13 +20,13 @@ export interface AvailableAction {
   name: string;
   description: string;
   parameters: Record<string, ActionParameter>;
-  minimumCountByPoint?: Record<number, number>;
 }
 
 export interface GameEvent {
   type: string;
   text: string;
   data: Record<string, unknown>;
+  /** Roles that may see this event; omitted means both. */
   audience?: Role[];
 }
 
@@ -39,52 +39,43 @@ export interface EventEntry extends HistoryEntry {
   seq: number;
 }
 
-export interface RoleView<Data = unknown, Details = unknown> {
-  status: GameStatus;
-  phase: string | null;
-  currentTurn: Role | null;
-  isMyTurn: boolean;
-  result: GameResult<Details> | null;
-  availableActions: AvailableAction[];
-  data: Data | null;
-}
-
-export interface GameState<Data = unknown, Details = unknown> extends RoleView<Data, Details> {
+export interface GameState<View = unknown, Details = unknown> {
   role: Role;
   gameId: string;
   gameName: string;
+  status: GameStatus;
+  currentTurn: Role | null;
+  isMyTurn: boolean;
+  availableActions: AvailableAction[];
+  data: View | null;
+  summary: string;
+  result: GameResult<Details> | null;
   history: HistoryEntry[];
 }
 
-export interface Snapshot<Data = unknown, Details = unknown> {
+export interface Snapshot<View = unknown, Details = unknown> {
   success: boolean;
-  state: GameState<Data, Details>;
+  state: GameState<View, Details>;
   events: EventEntry[];
   seq: number;
   timedOut: boolean;
   error?: string;
 }
 
-export type ApiResponse<Data = unknown, Details = unknown> = Snapshot<Data, Details> | {
+export type ApiResponse<View = unknown, Details = unknown> = Snapshot<View, Details> | {
   success: false;
   error: string;
   state?: never;
 };
+
+export interface GameInfo {
+  id: string;
+  name: string;
+  rules: string[];
+}
 
 export type ActionPayload = (
   | { action: 'new'; starter?: Role }
   | { action: 'act'; move: string; args?: ActionArgs }
   | { action: 'talk' }
 ) & { message?: string };
-
-export interface WaitPayload {
-  after: number;
-  timeoutMs?: number;
-  waitFor?: 'event' | 'event-or-turn';
-}
-
-export type ActionRequest = ActionPayload & {
-  after?: number;
-  timeoutMs?: number;
-  wait?: 'none' | 'auto';
-};

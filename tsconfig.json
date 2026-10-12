@@ -1,15 +1,17 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
+    "target": "ES2023",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
     "types": ["node"],
     "strict": true,
     "verbatimModuleSyntax": true,
     "noEmitOnError": true,
+    "declaration": true,
     "rootDir": ".",
-    "outDir": "dist"
+    "outDir": "dist",
+    "paths": { "/_kana/client.js": ["./web/client.ts"] }
   },
-  "include": ["src/**/*.ts", "web/**/*.ts", "scripts/**/*.ts"]
+  "include": ["src/**/*.ts", "web/**/*.ts", "games/**/*.ts", "scripts/**/*.ts", "test/**/*.ts"]
 }

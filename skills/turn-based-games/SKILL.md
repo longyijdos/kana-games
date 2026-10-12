@@ -1,6 +1,6 @@
 ---
 name: turn-based-games
-description: Play turn-based games with one human and one Agent using the kana-games CLI and a local web UI. Use when the user wants to play an integrated board, dice, or card game, or continue an existing match.
+description: Play turn-based games with one human and one Agent using the kana-games CLI and a local web UI. Use when the user wants to play a built-in or custom board, dice, or card game, or continue an existing match.
 ---
 
 # Turn-Based Games
@@ -10,78 +10,73 @@ Agent acts through the CLI. The server validates actions and maintains the game.
 
 ## Dependencies
 
-Requires Node.js 22 or newer and the `kana-games` executable from
-`@longyijdos/games`. From a local source checkout, install with:
+Requires Node.js 22.18 or newer and the `kana-games` executable:
 
 ```sh
-cd /absolute/path/to/kana-games
-npm ci
-npm run build
-npm install --global .
+npm install --global kana-games
 kana-games --version
 ```
 
-The npm package name can be used for registry installation after publication.
-Do not assume the source checkout lives inside this skill directory.
+`kana-games skills <claude|codex|kana|dir>` installs this skill and
+`create-turn-based-game` into an agent's global skill directory; add
+`--force` to update them after upgrading kana-games.
 
-## Game References
+## Games
 
-Read the selected game's reference before playing. Keep rules and game-specific
-actions in these documents:
+Built-in games have a reference with rules and strategy notes:
 
-- [大话骰 / Liar's Dice](references/liars-dice.md)
-- [五子棋 / Gomoku](references/gomoku.md)
+- [大话骰 / Liar's Dice](references/liars-dice.md) — `liars-dice`
+- [五子棋 / Gomoku](references/gomoku.md) — `gomoku`
+
+Custom games are directories (see the `create-turn-based-game` skill). For
+any game, `kana-games rules` prints the rules from the running server; read
+them before the first move of an unfamiliar game.
 
 ## Start and Observe
 
-Use `kana-games status --json` to inspect an existing service. If no service is
-running, start `kana-games serve <game>` with the host's background process
-facility. Read the selected reference for the game ID. Tell the user to open
-the URL printed by the server: `http://127.0.0.1:3456/<game>/`.
-
-Use `--port <port>` consistently on server and client for a custom port.
-The service is local, holds one game in memory, and does not automatically start
-a match. The game is fixed at server startup and has its own page and style.
-The user can choose the starter in that page, or the Agent can use
-`kana-games new --starter player --no-wait`.
-The starter defaults to `player`; use `agent` when the Agent should act first.
-A running game must finish before a new round can start. To switch games,
-stop the server and start it again with the new game ID.
+Use `kana-games status --json` to inspect an existing service. If none is
+running, start one with the host's background process facility:
 
 ```sh
-kana-games games
-kana-games status --json
+kana-games serve gomoku          # built-in game
+kana-games serve ./my-game       # custom game directory
 ```
+
+Tell the user to open the printed URL, `http://127.0.0.1:3456/`. Use
+`--port <port>` consistently on server and client for another port.
+The service is local, holds one game in memory, and does not automatically
+start a match. The user can choose the starter in the page, or the Agent can
+run `kana-games new --starter player` (`agent` to move first).
+A running game must finish before a new one starts. To switch games, stop the
+server and serve the other game.
 
 Read `state.isMyTurn`, `state.availableActions`, `state.data`, and the visible
 history. Never use server internals to inspect the opponent's hidden state.
-Available game actions are empty when it is not the Agent's turn.
+Available actions are empty when it is not the Agent's turn.
 
 ## Act and Talk
 
-Submit the game's action through the common command:
-
 ```sh
-kana-games act <action> --args '<JSON object>' -m 'Your message' --no-wait
-kana-games talk 'Your message' --no-wait
+kana-games act <action> --args '<JSON object>' -m 'Your message'
+kana-games talk 'Your message'
 ```
 
-Omit `--args` when the action has no parameters. Use the game's reference and
-current `availableActions` to choose arguments.
+Omit `--args` when the action has no parameters. `availableActions` lists
+each parameter as an integer with `min`/`max` or an `enum`.
 
-Communicate in-game using `-m` or `talk`: the human may stay in the browser and
-not see terminal chat. Talking does not consume the game turn.
-Successful commands print the latest state and advance the CLI's event cursor.
-Invalid actions return an error without changing the game; use the returned
-state to correct the move.
+Communicate in-game using `-m` or `talk`: the human stays in the browser and
+does not see terminal chat. Talking does not consume the turn.
+Commands return immediately with the latest state and advance the CLI's event
+cursor. Invalid actions return an error without changing the game; use the
+returned state to correct the move.
 
 ## Wait and Continue
 
-After handing action to the human, run `kana-games wait` using the host's
+After handing the turn to the human, run `kana-games wait` using the host's
 background job facility with completion notification **before finishing the
-Agent's chat turn**. A detached shell process alone does not arrange host
-notification; use the host's job mechanism. If it has no completion notification,
-keep the Agent turn active while waiting.
+Agent's chat turn**. A detached shell process alone does not arrange
+notification. If the host has no completion notification, keep the Agent turn
+active while waiting.
 
 ```sh
 kana-games wait --json
@@ -89,28 +84,24 @@ kana-games wait --json
 
 When the job completes, consume its output:
 
-- If `state.isMyTurn` is true, choose and submit a game action.
+- If `state.isMyTurn` is true, choose and submit an action.
 - If only a chat message arrived and the human still has the turn, respond with
   `talk` if useful, then start another background `wait`.
 - If `timedOut` is true, continue waiting. A timeout does not end the match.
 - If `state.status` is `ended`, acknowledge the result in-game. Start a new match
   only when the user wants to continue; use `wait` if the user will start it.
 
-`new`, `act`, and `talk` default to automatic waiting. Prefer `--no-wait` plus
-the explicit background `wait` pattern so foreground tool timeouts do not
-interrupt interaction. `wait` returns unread events or Agent action availability
-and has a ten-minute timeout.
+`wait` returns unread events or the Agent's turn, with a ten-minute timeout.
 
 ## Output and Cleanup
 
-Use `--json` for structured responses. Fields include `success`, `state`,
-`events`, `seq`, and `timedOut`. Text output includes a game-specific readable
-state. API errors include the latest role-visible state; local errors go to
-stderr. Errors exit with code 1; successful waits, including timeouts, exit 0.
+Use `--json` for structured responses: `success`, `state`, `events`, `seq`,
+`timedOut`. `state.summary` is the game's readable text view. API errors
+include the latest state; errors exit with code 1, successful waits (including
+timeouts) exit 0.
 
-The CLI saves its event cursor. Use `--after <seq>` only when deliberately
-reading from a specific event sequence.
+The CLI keeps the server token and event cursor in `~/.kana-games/<port>.json`.
+Use `--after <seq>` only to re-read from a specific event.
 
-When the user finishes playing, stop the waiting job and the server process you
-started using the host's process tools. The server runs in the foreground;
-there is no daemon lifecycle to manage.
+When the user finishes playing, stop the waiting job and the server process
+using the host's process tools. The server runs in the foreground.
