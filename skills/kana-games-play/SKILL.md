@@ -1,6 +1,6 @@
 ---
 name: kana-games-play
-description: Play turn-based games with one human and one Agent using the kana-games CLI and a local web UI. Use when the user wants to play a built-in or custom board, dice, or card game, or continue an existing match.
+description: Play turn-based games with one human and one Agent using the kana-games CLI and a local web UI. Use when the user wants to play a built-in game (liar's dice, gomoku, xiangqi) or a custom board, dice, or card game, or continue an existing match.
 ---
 
 # Turn-Based Games
@@ -28,6 +28,7 @@ Built-in games have a reference with rules and strategy notes:
 
 - [大话骰 / Liar's Dice](references/liars-dice.md) — `liars-dice`
 - [五子棋 / Gomoku](references/gomoku.md) — `gomoku`
+- [中国象棋 / Xiangqi](references/xiangqi.md) — `xiangqi`
 
 Custom games are directories (see the `kana-games-create` skill). For
 any game, `kana-games rules` prints the rules from the running server; read
@@ -98,7 +99,7 @@ notification. If the host has no completion notification, keep the Agent turn
 active while waiting.
 
 ```sh
-kana-games wait --json
+kana-games wait
 ```
 
 When the job completes, consume its output:
@@ -115,8 +116,12 @@ When the job completes, consume its output:
 
 ## Output and Cleanup
 
-Use `--json` for structured responses: `success`, `state`, `events`, `seq`,
-`timedOut`. `state.summary` is the game's readable text view. API errors
+The default text output is enough to play: new events with table talk, the
+game's text view, whose turn it is, and the available actions. It stays small
+because only `status` lists the full history. Use `--json` when you need exact
+fields: `success`, `state`, `events`, `seq`, `timedOut`, where
+`state.summary` is that same text view. JSON output repeats the whole history
+on every call. API errors
 include the latest state; errors exit with code 1, successful waits (including
 timeouts) exit 0.
 

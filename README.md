@@ -3,7 +3,7 @@
 一个用户和一个 Agent 共玩回合制游戏的小框架。用户在网页里操作，Agent 通过固定的
 `kana-games` 命令观察、行动、聊天和等待。
 
-- **自带游戏**：大话骰（像素街机风）、五子棋（木纹棋盘）。
+- **自带游戏**：大话骰（像素街机风）、五子棋（木纹棋盘）、中国象棋（含悔棋、求和与长将判负）。
 - **自己做游戏**：一个目录、一个规则文件、一个网页，`kana-games serve ./my-game` 即可开玩。
   可以让 Agent 按 `skills/kana-games-create` 帮你设计。
 
@@ -76,7 +76,7 @@ my-game/
 
 框架负责回合、开局结算、参数校验、聊天记录和 Agent CLI；游戏只写规则和页面。
 完整约定和示例见 [skills/kana-games-create/SKILL.md](skills/kana-games-create/SKILL.md)，
-内置游戏 `games/gomoku`、`games/liars-dice` 也是按同样约定写的范例。
+内置游戏 `games/gomoku`、`games/liars-dice`、`games/xiangqi` 也是按同样约定写的范例。
 
 `game.ts` 由 Node 直接运行（自动去掉类型），类型从 `kana-games` 导入：
 

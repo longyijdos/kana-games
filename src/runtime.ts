@@ -113,7 +113,7 @@ export class GameSession {
 
   getStateForRole(role: Role): GameState {
     const started = this.status !== 'waiting';
-    const view = started ? this.game.view({ ...this.context(role), ended: this.status === 'ended' }) : null;
+    const view = started ? this.game.view({ ...this.context(role), ended: this.status === 'ended', turn: this.turn }) : null;
     return {
       role, gameId: this.game.id, gameName: this.game.name,
       status: this.status, currentTurn: this.turn, isMyTurn: this.isMyTurn(role),

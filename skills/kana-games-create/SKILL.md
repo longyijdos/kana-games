@@ -83,7 +83,7 @@ export default {
 | `setup({ starter })` | on every new game | initial `data` |
 | `actions({ data, role, opponent })` | for the role whose turn it is | actions with `name`, `description`, `parameters` |
 | `act({ data, role, opponent }, move, args)` | when that role submits an action | `{ event, result?, next? }` |
-| `view({ data, role, opponent, ended })` | for each role on every snapshot | what that role may see |
+| `view({ data, role, opponent, ended, turn })` | for each role on every snapshot | what that role may see; `turn` is the role to act next |
 | `format(view)` | for the CLI text output | a plain-text string |
 
 - **Roles.** `Role` is `'player'` (the human in the browser) or `'agent'`.

@@ -31,8 +31,8 @@ export interface GameDefinition<Data = any, View = unknown, Details = unknown> {
   actions(context: GameContext<Data>): AvailableAction[];
   /** Apply a validated action. Throw an Error to reject it without changes. */
   act(context: GameContext<Data>, move: string, args: ActionArgs): ActOutcome<Details>;
-  /** What role may see. Hide the opponent's secrets here. */
-  view(context: GameContext<Data> & { ended: boolean }): View;
+  /** What role may see. Hide the opponent's secrets here. turn is who acts next (null once ended). */
+  view(context: GameContext<Data> & { ended: boolean; turn: Role | null }): View;
   /** Plain-text rendering of a view for the CLI. */
   format(view: View): string;
 }
