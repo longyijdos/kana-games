@@ -1,6 +1,6 @@
 {
   "name": "kana-games",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Turn-based games for one human and one agent: a small framework, a shared CLI and built-in games",
   "type": "module",
   "bin": {
